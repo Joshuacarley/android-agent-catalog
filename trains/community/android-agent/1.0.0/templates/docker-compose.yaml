@@ -1,0 +1,297 @@
+{#
+  Android Agent Team — TrueNAS Catalog App
+  Jinja2 template rendered by TrueNAS SCALE (Electric Eel+).
+  Values come from ix_values.yaml merged with user answers to questions.yaml.
+#}
+{%- set image = images.image.repository ~ ":" ~ images.image.tag -%}
+{%- set data_path = values.storage.data_path -%}
+{%- set dev_count = values.agent.developer_count -%}
+version: "3.9"
+
+services:
+
+  # ── Telegram Bot (always-on, two-way control) ─────────────
+  telegram-bot:
+    image: {{ image }}
+    container_name: agent-telegram-bot
+    restart: always
+    command: ["telegram-bot"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "bot.py"]
+      interval: 30s
+      retries: 3
+
+  # ── Status Dashboard ──────────────────────────────────────
+  dashboard:
+    image: {{ image }}
+    container_name: agent-dashboard
+    restart: always
+    command: ["dashboard"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    ports:
+      - "{{ values.network.dashboard_port }}:7842"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus:ro"
+      - "{{ data_path }}/workspaces:/agent/workspaces:ro"
+      - "{{ data_path }}/logs:/agent/logs:ro"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  # ── Coordinator (polls GitHub, dispatches tasks) ──────────
+  coordinator:
+    image: {{ image }}
+    container_name: agent-coordinator
+    restart: unless-stopped
+    command: ["coordinator"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"
+
+  # ── Architect ─────────────────────────────────────────────
+  architect:
+    image: {{ image }}
+    container_name: agent-architect
+    restart: unless-stopped
+    command: ["worker", "architect"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"
+
+  # ── Developer 1 ───────────────────────────────────────────
+  developer-1:
+    image: {{ image }}
+    container_name: agent-developer-1
+    restart: unless-stopped
+    command: ["worker", "developer"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"
+{% if dev_count >= 2 %}
+  # ── Developer 2 ───────────────────────────────────────────
+  developer-2:
+    image: {{ image }}
+    container_name: agent-developer-2
+    restart: unless-stopped
+    command: ["worker", "developer"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"
+{% endif %}
+{% if dev_count >= 3 %}
+  # ── Developer 3 ───────────────────────────────────────────
+  developer-3:
+    image: {{ image }}
+    container_name: agent-developer-3
+    restart: unless-stopped
+    command: ["worker", "developer"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"
+{% endif %}
+{% if dev_count >= 4 %}
+  # ── Developer 4 ───────────────────────────────────────────
+  developer-4:
+    image: {{ image }}
+    container_name: agent-developer-4
+    restart: unless-stopped
+    command: ["worker", "developer"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"
+{% endif %}
+  # ── QA (emulator, screen recording) ──────────────────────
+  qa:
+    image: {{ image }}
+    container_name: agent-qa
+    restart: unless-stopped
+    command: ["worker", "qa"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+      DISPLAY: ":99"
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"
+
+  # ── DevOps (final build, Telegram delivery, GitHub PR) ────
+  devops:
+    image: {{ image }}
+    container_name: agent-devops
+    restart: unless-stopped
+    command: ["worker", "devops"]
+    environment:
+      GITHUB_TOKEN: "{{ values.github.token }}"
+      GITHUB_REPO: "{{ values.github.repo }}"
+      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
+      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
+      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
+      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
+      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
+      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
+      APP_PACKAGE: "{{ values.agent.app_package }}"
+      TZ: "{{ values.agent.timezone }}"
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - "{{ data_path }}/bus:/agent/bus"
+      - "{{ data_path }}/workspaces:/agent/workspaces"
+      - "{{ data_path }}/logs:/agent/logs"
+      - "{{ data_path }}/builds:/builds"
+      - "{{ data_path }}/android-home:/root/.android"
+      - "{{ data_path }}/claude-credentials:/root/.claude"
+      - "{{ data_path }}/agent-config:/agent/config"

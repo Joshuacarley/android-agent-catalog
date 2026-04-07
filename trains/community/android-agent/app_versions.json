@@ -1,0 +1,84 @@
+{
+  "1.0.0": {
+    "healthy": true,
+    "supported": true,
+    "healthy_error": null,
+    "location": "trains/community/android-agent/1.0.0",
+    "last_update": "2026-04-07 00:00:00",
+    "required_features": [],
+    "human_version": "1.0.0_1.0.0",
+    "version": "1.0.0",
+    "app_metadata": {
+      "annotations": {
+        "min_scale_version": "24.10.0"
+      },
+      "app_version": "1.0.0",
+      "capabilities": [
+        {
+          "name": "NET_ADMIN",
+          "description": "Android Agent Team is able to configure network interfaces for the Android emulator."
+        }
+      ],
+      "categories": [
+        "development"
+      ],
+      "date_added": "2026-04-07",
+      "description": "Autonomous multi-agent Android CI/CD system powered by Claude Code. Monitors GitHub issues, writes code, runs builds, tests on an Android emulator, records video, and delivers APKs directly to Telegram.",
+      "home": "https://github.com/Joshuacarley/android-agent-catalog",
+      "host_mounts": [
+        {
+          "host_path": "/dev/kvm",
+          "description": "Android Agent Team requires access to /dev/kvm to run the Android emulator with hardware acceleration."
+        },
+        {
+          "host_path": "/var/run/docker.sock",
+          "description": "Android Agent Team needs access to the Docker socket to orchestrate worker containers."
+        }
+      ],
+      "icon": "https://raw.githubusercontent.com/Joshuacarley/android-agent-catalog/main/icon.png",
+      "keywords": [
+        "android",
+        "ci-cd",
+        "claude",
+        "ai",
+        "development",
+        "automation"
+      ],
+      "lib_version": "2.1.0",
+      "lib_version_hash": "",
+      "maintainers": [
+        {
+          "email": "",
+          "name": "Josh",
+          "url": "https://github.com/Joshuacarley"
+        }
+      ],
+      "name": "android-agent",
+      "run_as_context": [
+        {
+          "description": "Android Agent Team runs as root to access /dev/kvm and the Docker socket.",
+          "gid": 0,
+          "group_name": "root",
+          "uid": 0,
+          "user_name": "root"
+        }
+      ],
+      "screenshots": [],
+      "sources": [
+        "https://github.com/Joshuacarley/android-agent-catalog"
+      ],
+      "title": "Android Agent Team",
+      "train": "community",
+      "version": "1.0.0"
+    },
+    "schema": {
+      "variable": "ix_context",
+      "label": "",
+      "group": "",
+      "schema": {
+        "type": "dict",
+        "attrs": []
+      }
+    }
+  }
+}

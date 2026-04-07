@@ -1,0 +1,194 @@
+groups:
+  - name: "GitHub"
+    description: "Connect the agent to your GitHub repository"
+  - name: "Telegram"
+    description: "Receive APKs, videos, and commands via Telegram"
+  - name: "Anthropic"
+    description: "Claude Code authentication"
+  - name: "Agent Behavior"
+    description: "Control how the agent team operates"
+  - name: "Network Configuration"
+    description: "Configure the status dashboard port"
+  - name: "Storage"
+    description: "Where to store builds, logs, and workspaces"
+
+portals:
+  web_portal:
+    protocols:
+      - "http"
+    host:
+      - "0.0.0.0"
+    ports:
+      - "{{ .Values.network.dashboard_port }}"
+    path: "/"
+
+questions:
+
+  # ── GitHub ─────────────────────────────────────────────────
+  - variable: github
+    label: "GitHub"
+    group: "GitHub"
+    schema:
+      type: dict
+      attrs:
+        - variable: token
+          label: "GitHub Personal Access Token"
+          description: >-
+            Token with repo, issues, and pull_requests scopes.
+            Create at github.com/settings/tokens
+          schema:
+            type: string
+            required: true
+            private: true
+            default: ""
+        - variable: repo
+          label: "GitHub Repository"
+          description: "Your Android repo in owner/name format (e.g. myorg/my-app)"
+          schema:
+            type: string
+            required: true
+            default: ""
+
+  # ── Telegram ───────────────────────────────────────────────
+  - variable: telegram
+    label: "Telegram"
+    group: "Telegram"
+    schema:
+      type: dict
+      attrs:
+        - variable: token
+          label: "Telegram Bot Token"
+          description: "Create a bot at t.me/BotFather and paste the token here."
+          schema:
+            type: string
+            required: true
+            private: true
+            default: ""
+        - variable: chat_id
+          label: "Your Telegram Chat ID"
+          description: "Message t.me/userinfobot to get your personal chat ID."
+          schema:
+            type: string
+            required: true
+            default: ""
+
+  # ── Anthropic ─────────────────────────────────────────────
+  - variable: anthropic
+    label: "Anthropic"
+    group: "Anthropic"
+    schema:
+      type: dict
+      attrs:
+        - variable: auth_mode
+          label: "Claude Authentication Mode"
+          description: >-
+            Subscription: use your Claude Pro/Max plan (no extra cost).
+            API Key: use Anthropic Console credits (pay per token).
+          schema:
+            type: string
+            required: true
+            default: "subscription"
+            enum:
+              - value: "subscription"
+                description: "Claude Pro / Max subscription (recommended)"
+              - value: "api_key"
+                description: "Anthropic Console API key"
+        - variable: api_key
+          label: "Anthropic API Key"
+          description: >-
+            Only required if you chose API Key mode above.
+            Leave blank if using your subscription.
+          schema:
+            type: string
+            required: false
+            private: true
+            default: ""
+
+  # ── Agent Behavior ─────────────────────────────────────────
+  - variable: agent
+    label: "Agent Behavior"
+    group: "Agent Behavior"
+    schema:
+      type: dict
+      attrs:
+        - variable: issue_label
+          label: "GitHub Issue Label to Trigger Agent"
+          description: "Issues with this label will be picked up automatically."
+          schema:
+            type: string
+            required: true
+            default: "claude"
+        - variable: poll_interval
+          label: "Issue Poll Interval (seconds)"
+          description: "How often to check GitHub for new issues. Default: 300 (5 min)"
+          schema:
+            type: int
+            required: true
+            default: 300
+            min: 60
+            max: 3600
+        - variable: developer_count
+          label: "Number of Parallel Developer Agents"
+          description: "More agents = faster parallel work. Recommended: 2. Each uses ~6GB RAM during builds."
+          schema:
+            type: int
+            required: true
+            default: 2
+            enum:
+              - value: 1
+                description: "1 — minimal resources"
+              - value: 2
+                description: "2 — recommended"
+              - value: 3
+                description: "3 — heavy workload"
+              - value: 4
+                description: "4 — max parallel (requires 24GB+ RAM)"
+        - variable: app_package
+          label: "Android App Package Name"
+          description: "e.g. com.example.myapp — used by QA agent to launch the app"
+          schema:
+            type: string
+            required: false
+            default: ""
+        - variable: timezone
+          label: "Timezone"
+          description: "Used for log timestamps"
+          schema:
+            type: string
+            required: true
+            default: "America/Los_Angeles"
+
+  # ── Network ───────────────────────────────────────────────
+  - variable: network
+    label: "Network Configuration"
+    group: "Network Configuration"
+    schema:
+      type: dict
+      attrs:
+        - variable: dashboard_port
+          label: "Status Dashboard Port"
+          description: "Port to access the web dashboard (http://your-nas:PORT)"
+          schema:
+            type: int
+            required: true
+            default: 7842
+            min: 1024
+            max: 65535
+
+  # ── Storage ────────────────────────────────────────────────
+  - variable: storage
+    label: "Storage"
+    group: "Storage"
+    schema:
+      type: dict
+      attrs:
+        - variable: data_path
+          label: "Data Storage Path"
+          description: >-
+            Path on your TrueNAS pool to store builds, logs, and workspaces.
+            This dataset must exist before installing.
+            Example: /mnt/tank/agent-data
+          schema:
+            type: hostpath
+            required: true
+            default: "/mnt/tank/agent-data"

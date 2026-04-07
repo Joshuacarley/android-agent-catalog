@@ -1,0 +1,6 @@
+images:
+  image:
+    repository: ghcr.io/joshuacarley/android-agent
+    tag: latest
+consts:
+  container_prefix: agent
