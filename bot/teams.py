@@ -11,6 +11,7 @@ TEAMS_CONFIG = "/agent/config/teams.json"
 BUS_ROOT     = "/agent/bus"
 WS_ROOT      = "/agent/workspaces"
 LOG_ROOT     = "/agent/logs"
+LOGS         = LOG_ROOT  # backwards-compat alias used by dashboard.py
 TOKENS_ROOT  = "/agent/logs"
 
 DEFAULT_TEAMS_CONFIG = {
