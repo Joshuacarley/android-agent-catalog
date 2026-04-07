@@ -8,14 +8,14 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 # ── System packages ───────────────────────────────────────────
 RUN apt-get update && apt-get install -y \
     # Core
-    curl wget unzip git jq flock \
+    curl wget unzip git jq util-linux \
     # Java (Android build requirement)
     openjdk-17-jdk \
     # Build tools
     build-essential \
     # Display / emulator
     xvfb x11-utils \
-    libgl1-mesa-glx libgl1-mesa-dri \
+    libgl1 libglx-mesa0 libgl1-mesa-dri \
     # Video
     ffmpeg \
     # Python (telegram bot)
