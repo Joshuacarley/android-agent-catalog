@@ -57,19 +57,6 @@ jobs:
           # The Android SDK layers are large; this matters
           platforms: linux/amd64
 
-      - name: Update catalog version
-        run: |
-          VERSION=$(date +%Y.%m.%d)
-          sed -i "s/\"latest_version\": \".*\"/\"latest_version\": \"${VERSION}\"/" catalog.json
-          sed -i "s/\"latest_app_version\": \".*\"/\"latest_app_version\": \"${VERSION}\"/" catalog.json
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add catalog.json
-          git diff --staged --quiet || git commit -m "chore: bump catalog version to ${VERSION}"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Notify on failure
         if: failure()
         run: |
