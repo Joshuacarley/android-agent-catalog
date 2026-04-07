@@ -1,11 +1,17 @@
 {#
   Android Agent Team — TrueNAS Catalog App
   Jinja2 template rendered by TrueNAS SCALE (Electric Eel+).
-  Values come from ix_values.yaml merged with user answers to questions.yaml.
 
-  Storage is TrueNAS-managed via Docker named volumes — no host paths, no
-  pre-install script. Volumes are auto-created on first install, persist
-  across upgrades, and are listed under the app's Volumes tab in the UI.
+  Configuration flow:
+    - The `dashboard` container boots immediately and serves a /setup
+      page on the dashboard port. The user enters all their credentials
+      through that web form.
+    - Every other container waits for the dashboard to write
+      /agent/config/config.json to the shared `agent-config` volume,
+      then loads it and starts its role.
+
+  No secrets are baked into this compose file — the only question the
+  TrueNAS install wizard asks is the dashboard host port.
 #}
 {%- set image = images.image.repository ~ ":" ~ images.image.tag -%}
 {%- set dev_count = values.agent.developer_count -%}
@@ -13,54 +19,12 @@ version: "3.9"
 
 services:
 
-  # ── Telegram Bot (always-on, two-way control) ─────────────
-  telegram-bot:
-    image: {{ image }}
-    container_name: agent-telegram-bot
-    restart: always
-    command: ["telegram-bot"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
-    devices:
-      - /dev/kvm:/dev/kvm
-    volumes:
-      - bus:/agent/bus
-      - workspaces:/agent/workspaces
-      - logs:/agent/logs
-      - builds:/builds
-      - android-home:/root/.android
-      - /var/run/docker.sock:/var/run/docker.sock
-    healthcheck:
-      test: ["CMD", "pgrep", "-f", "bot.py"]
-      interval: 30s
-      retries: 3
-
-  # ── Status Dashboard ──────────────────────────────────────
+  # ── Status Dashboard (boots first, hosts /setup) ─────────
   dashboard:
     image: {{ image }}
     container_name: agent-dashboard
     restart: always
     command: ["dashboard"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     ports:
       - "{{ values.network.dashboard_port }}:7842"
     devices:
@@ -69,25 +33,36 @@ services:
       - bus:/agent/bus:ro
       - workspaces:/agent/workspaces:ro
       - logs:/agent/logs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - agent-config:/agent/config
+      - /var/run/docker.sock:/var/run/docker.sock
 
-  # ── Coordinator (polls GitHub, dispatches tasks) ──────────
+  # ── Telegram Bot (always-on, two-way control) ────────────
+  telegram-bot:
+    image: {{ image }}
+    container_name: agent-telegram-bot
+    restart: always
+    command: ["telegram-bot"]
+    devices:
+      - /dev/kvm:/dev/kvm
+    volumes:
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - agent-config:/agent/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "bot.py"]
+      interval: 30s
+      retries: 3
+
+  # ── Coordinator (polls GitHub, dispatches tasks) ─────────
   coordinator:
     image: {{ image }}
     container_name: agent-coordinator
     restart: unless-stopped
     command: ["coordinator"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
@@ -99,23 +74,12 @@ services:
       - claude-credentials:/root/.claude
       - agent-config:/agent/config
 
-  # ── Architect ─────────────────────────────────────────────
+  # ── Architect ────────────────────────────────────────────
   architect:
     image: {{ image }}
     container_name: agent-architect
     restart: unless-stopped
     command: ["worker", "architect"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
@@ -127,23 +91,12 @@ services:
       - claude-credentials:/root/.claude
       - agent-config:/agent/config
 
-  # ── Developer 1 ───────────────────────────────────────────
+  # ── Developer 1 ──────────────────────────────────────────
   developer-1:
     image: {{ image }}
     container_name: agent-developer-1
     restart: unless-stopped
     command: ["worker", "developer"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
@@ -155,23 +108,12 @@ services:
       - claude-credentials:/root/.claude
       - agent-config:/agent/config
 {% if dev_count >= 2 %}
-  # ── Developer 2 ───────────────────────────────────────────
+  # ── Developer 2 ──────────────────────────────────────────
   developer-2:
     image: {{ image }}
     container_name: agent-developer-2
     restart: unless-stopped
     command: ["worker", "developer"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
@@ -184,23 +126,12 @@ services:
       - agent-config:/agent/config
 {% endif %}
 {% if dev_count >= 3 %}
-  # ── Developer 3 ───────────────────────────────────────────
+  # ── Developer 3 ──────────────────────────────────────────
   developer-3:
     image: {{ image }}
     container_name: agent-developer-3
     restart: unless-stopped
     command: ["worker", "developer"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
@@ -213,23 +144,12 @@ services:
       - agent-config:/agent/config
 {% endif %}
 {% if dev_count >= 4 %}
-  # ── Developer 4 ───────────────────────────────────────────
+  # ── Developer 4 ──────────────────────────────────────────
   developer-4:
     image: {{ image }}
     container_name: agent-developer-4
     restart: unless-stopped
     command: ["worker", "developer"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
@@ -248,13 +168,6 @@ services:
     restart: unless-stopped
     command: ["worker", "qa"]
     environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
       DISPLAY: ":99"
     security_opt:
       - seccomp:unconfined
@@ -271,23 +184,12 @@ services:
       - claude-credentials:/root/.claude
       - agent-config:/agent/config
 
-  # ── DevOps (final build, Telegram delivery, GitHub PR) ────
+  # ── DevOps (final build, Telegram delivery, GitHub PR) ──
   devops:
     image: {{ image }}
     container_name: agent-devops
     restart: unless-stopped
     command: ["worker", "devops"]
-    environment:
-      GITHUB_TOKEN: "{{ values.github.token }}"
-      GITHUB_REPO: "{{ values.github.repo }}"
-      TELEGRAM_TOKEN: "{{ values.telegram.token }}"
-      TELEGRAM_CHAT_ID: "{{ values.telegram.chat_id }}"
-      ANTHROPIC_API_KEY: "{{ values.anthropic.api_key }}"
-      CLAUDE_AUTH_MODE: "{{ values.anthropic.auth_mode }}"
-      CLAUDE_ISSUE_LABEL: "{{ values.agent.issue_label }}"
-      POLL_INTERVAL_SECONDS: "{{ values.agent.poll_interval }}"
-      APP_PACKAGE: "{{ values.agent.app_package }}"
-      TZ: "{{ values.agent.timezone }}"
     devices:
       - /dev/kvm:/dev/kvm
     volumes:

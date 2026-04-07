@@ -2,29 +2,38 @@
 
 Autonomous multi-agent Android CI/CD system powered by Claude Code.
 
-Android Agent Team monitors your GitHub repository for issues with a
-configurable label, then dispatches a team of Claude-powered agents
-(architect, developers, QA, devops) that write code, run builds, test on
-an Android emulator, record video of the result, and deliver APKs
-directly to Telegram.
+Monitors your GitHub repository for issues with a configurable label
+and dispatches a team of Claude-powered agents (architect, developers,
+QA, devops) that write code, run builds, test on an Android emulator,
+record video of the result, and deliver APKs to Telegram.
 
 ## Requirements
 
 - TrueNAS SCALE 24.10 (Electric Eel) or newer
-- A host with KVM support (`/dev/kvm` must exist on the TrueNAS host)
-- A GitHub personal access token with `repo`, `issues`, and `pull_requests` scopes
+- A host with KVM support (`/dev/kvm` must exist)
+- A GitHub personal access token (`repo`, `issues`, `pull_requests`)
 - A Telegram bot token and chat ID
-- Either a Claude Pro/Max subscription (recommended) or an Anthropic API key
+- Either a Claude Pro/Max subscription or an Anthropic API key
 
 ## Install
 
-Storage is fully managed by TrueNAS via Docker named volumes — no
-pre-install script, no manual datasets.
+The only question this wizard asks is the dashboard port. **Everything
+else is configured through a web form after install** — there are no
+secrets in the catalog and no pre-install steps.
 
-1. Fill out the install wizard with your GitHub, Telegram, and
-   Anthropic credentials.
-2. Click Install. TrueNAS auto-creates the persistent volumes.
-3. Once installed, open the dashboard at `http://<your-nas>:<dashboard-port>`.
+1. Click **Install**. TrueNAS auto-provisions persistent volumes and
+   starts the dashboard. The other containers boot into a "waiting for
+   config" loop.
+2. Open `http://<your-nas>:<dashboard-port>` in your browser. You'll
+   be redirected to a setup form.
+3. Enter your GitHub token, Telegram credentials, Anthropic auth mode,
+   and agent preferences. Click **Save & Start Agents**.
+4. The dashboard restarts the worker containers, which pick up the new
+   config and start polling.
 
-See the project repository for more details:
-https://github.com/Joshuacarley/android-agent-catalog
+If you use Claude Pro/Max subscription auth, run this one-time login
+on your TrueNAS host after the agents have started:
+
+```
+sudo docker exec -it agent-coordinator claude
+```

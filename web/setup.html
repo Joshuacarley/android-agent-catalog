@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Android Agent Team — Setup</title>
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #141820;
+    --border: #222933;
+    --text: #e6edf3;
+    --muted: #8b95a1;
+    --accent: #f0a500;
+    --accent-hover: #ffb820;
+    --ok: #3fb950;
+    --err: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 20px 60px;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+    letter-spacing: -0.3px;
+  }
+  .sub {
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  fieldset {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px 8px;
+    margin: 0 0 18px;
+    background: var(--panel);
+  }
+  legend {
+    padding: 0 8px;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  label {
+    display: block;
+    margin: 12px 0 4px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input[type=text], input[type=password], input[type=number], select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0b0d10;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 10px;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  button {
+    background: var(--accent);
+    color: #0b0d10;
+    border: 0;
+    border-radius: 6px;
+    padding: 14px 22px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  button:hover { background: var(--accent-hover); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  #status {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: none;
+  }
+  #status.ok  { background: rgba(63,185,80,0.12); color: var(--ok);  border: 1px solid rgba(63,185,80,0.3); display:block; }
+  #status.err { background: rgba(248,81,73,0.12); color: var(--err); border: 1px solid rgba(248,81,73,0.3); display:block; }
+  code {
+    background: #0b0d10;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12.5px;
+    border: 1px solid var(--border);
+  }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Android Agent Team — Setup</h1>
+  <p class="sub">
+    Configure your credentials below. The coordinator, workers, telegram bot,
+    and QA agent are waiting for this — they'll start automatically once you
+    hit <b>Save &amp; Start</b>.
+  </p>
+
+  <form id="f">
+
+    <fieldset>
+      <legend>GitHub</legend>
+
+      <label for="github_token">Personal Access Token</label>
+      <div class="hint">Create at <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> with scopes: <code>repo</code>, <code>issues</code>, <code>pull_requests</code></div>
+      <input type="password" id="github_token" name="github_token" autocomplete="off" required>
+
+      <label for="github_repo">Repository</label>
+      <div class="hint">Your Android repo in <code>owner/name</code> format</div>
+      <input type="text" id="github_repo" name="github_repo" placeholder="yourname/your-android-app" required>
+    </fieldset>
+
+    <fieldset>
+      <legend>Telegram</legend>
+
+      <label for="telegram_token">Bot Token</label>
+      <div class="hint">Create a bot via <code>@BotFather</code> on Telegram</div>
+      <input type="password" id="telegram_token" name="telegram_token" autocomplete="off" required>
+
+      <label for="telegram_chat_id">Your Chat ID</label>
+      <div class="hint">Message <code>@userinfobot</code> on Telegram to get your personal chat ID</div>
+      <input type="text" id="telegram_chat_id" name="telegram_chat_id" required>
+    </fieldset>
+
+    <fieldset>
+      <legend>Claude</legend>
+
+      <label for="anthropic_auth_mode">Authentication Mode</label>
+      <select id="anthropic_auth_mode" name="anthropic_auth_mode">
+        <option value="subscription">Claude Pro/Max subscription (recommended)</option>
+        <option value="api_key">Anthropic Console API key</option>
+      </select>
+
+      <label for="anthropic_api_key">API Key <span style="color:var(--muted); font-weight:400;">(only if using API key mode)</span></label>
+      <input type="password" id="anthropic_api_key" name="anthropic_api_key" autocomplete="off" placeholder="Leave blank for subscription mode">
+      <div class="hint">Subscription mode: after saving, SSH in and run <code>sudo docker exec -it agent-coordinator claude</code> to log in once.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Agent Behavior</legend>
+
+      <label for="issue_label">GitHub Issue Trigger Label</label>
+      <div class="hint">Issues with this label are picked up automatically</div>
+      <input type="text" id="issue_label" name="issue_label" value="claude">
+
+      <div class="row2">
+        <div>
+          <label for="poll_interval">Poll Interval (seconds)</label>
+          <input type="number" id="poll_interval" name="poll_interval" value="300" min="60" max="3600">
+        </div>
+        <div>
+          <label for="developer_count">Parallel Developers</label>
+          <select id="developer_count" name="developer_count">
+            <option value="1">1 — minimal</option>
+            <option value="2" selected>2 — recommended</option>
+            <option value="3">3 — heavy</option>
+            <option value="4">4 — max (needs 24GB+ RAM)</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="app_package">Android App Package</label>
+      <div class="hint">e.g. <code>com.example.myapp</code> — used by the QA agent to launch the app</div>
+      <input type="text" id="app_package" name="app_package" placeholder="com.example.myapp">
+
+      <label for="timezone">Timezone</label>
+      <input type="text" id="timezone" name="timezone" value="America/Los_Angeles">
+    </fieldset>
+
+    <button type="submit" id="save">Save &amp; Start Agents</button>
+    <div id="status"></div>
+  </form>
+</div>
+
+<script>
+  // Prefill from existing config if any
+  fetch('/api/setup').then(r => r.json()).then(c => {
+    if (!c || typeof c !== 'object') return;
+    for (const [k, v] of Object.entries(c)) {
+      const el = document.getElementById(k);
+      if (el != null && v !== null && v !== '') el.value = v;
+    }
+  }).catch(() => {});
+
+  const form = document.getElementById('f');
+  const btn = document.getElementById('save');
+  const statusEl = document.getElementById('status');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    statusEl.className = '';
+    statusEl.textContent = 'Saving...';
+    statusEl.style.display = 'block';
+
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.poll_interval = parseInt(data.poll_interval || '300', 10);
+    data.developer_count = parseInt(data.developer_count || '2', 10);
+
+    try {
+      const res = await fetch('/api/setup', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+      const out = await res.json();
+      if (out.ok) {
+        statusEl.className = 'ok';
+        statusEl.textContent = '✅ Saved. Restarting agent containers — give them ~30s, then the dashboard will load at this URL.';
+        setTimeout(() => { window.location.href = '/'; }, 5000);
+      } else {
+        statusEl.className = 'err';
+        statusEl.textContent = '❌ ' + (out.error || 'Unknown error');
+        btn.disabled = false;
+      }
+    } catch (err) {
+      statusEl.className = 'err';
+      statusEl.textContent = '❌ ' + err.message;
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

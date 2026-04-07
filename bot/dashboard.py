@@ -15,9 +15,28 @@ from teams import (
     collect_all_state, load_teams, add_team, delete_team,
     get_team_log_files, LOGS, LOG_ROOT, BUS_ROOT, WS_ROOT
 )
+import config as agent_config
 
 PORT = 7842
-HTML_PATH = os.path.join(os.path.dirname(__file__), '..', 'web', 'index.html')
+HTML_PATH  = os.path.join(os.path.dirname(__file__), '..', 'web', 'index.html')
+SETUP_PATH = os.path.join(os.path.dirname(__file__), '..', 'web', 'setup.html')
+
+SECRET_KEYS = {"github_token", "telegram_token", "anthropic_api_key"}
+
+def _restart_workers():
+    """Restart all agent containers except the dashboard itself."""
+    try:
+        out = subprocess.check_output(
+            ["docker", "ps", "-a", "--filter", "name=agent-",
+             "--format", "{{.Names}}"],
+            text=True, timeout=5,
+        ).strip()
+        names = [n for n in out.split("\n") if n and n != "agent-dashboard"]
+        if names:
+            subprocess.Popen(["docker", "restart", *names],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"Worker restart failed: {e}")
 
 # ── SSE hub ───────────────────────────────────────────────────
 _subs = []; _lock = threading.Lock()
@@ -137,9 +156,25 @@ class Handler(BaseHTTPRequestHandler):
         p = parsed.path
 
         if p in ('/', '/index.html'):
+            if not agent_config.is_configured():
+                self.send_response(302)
+                self.send_header('Location', '/setup')
+                self.end_headers()
+                return
             try:    body = open(HTML_PATH, 'rb').read()
             except: body = b"<h1>Dashboard HTML not found</h1>"
             self._send(200, 'text/html', body)
+
+        elif p == '/setup':
+            try:    body = open(SETUP_PATH, 'rb').read()
+            except: body = b"<h1>Setup page not found</h1>"
+            self._send(200, 'text/html', body)
+
+        elif p == '/api/setup':
+            # Return current config with secrets redacted (for prefill)
+            cfg = agent_config.get_config()
+            redacted = {k: ("" if k in SECRET_KEYS else v) for k, v in cfg.items()}
+            self._json(redacted)
 
         elif p == '/events':
             self.send_response(200)
@@ -186,7 +221,28 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         body = self.rfile.read(int(self.headers.get('Content-Length',0)))
 
-        if parsed.path == '/api/command':
+        if parsed.path == '/api/setup':
+            try:
+                data = json.loads(body or b'{}')
+                # Don't overwrite secrets with empty strings on re-submission
+                existing = agent_config.get_config()
+                for k in SECRET_KEYS:
+                    if k in data and not str(data[k]).strip() and existing.get(k):
+                        data[k] = existing[k]
+                missing = [
+                    k for k in agent_config.REQUIRED_KEYS
+                    if not str(data.get(k, existing.get(k, ""))).strip()
+                ]
+                if missing:
+                    self._json({'ok': False, 'error': f'Missing required fields: {", ".join(missing)}'})
+                    return
+                agent_config.save_config(data)
+                _restart_workers()
+                self._json({'ok': True})
+            except Exception as e:
+                self._json({'ok': False, 'error': str(e)})
+
+        elif parsed.path == '/api/command':
             try:
                 data = json.loads(body)
                 result = run_command(data.get('cmd',''), data.get('team_id'))

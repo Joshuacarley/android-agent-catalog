@@ -30,8 +30,15 @@ Docker volumes are auto-created on install and persist across upgrades.
 
 1. Go to **Apps → Discover Apps**
 2. Search for **"Android Agent"**
-3. Click **Install**
-4. Fill in the wizard:
+3. Click **Install** — the only question is the dashboard port
+4. Click **Install** — done. TrueNAS auto-provisions all data volumes.
+
+---
+
+### Step 3 — Configure via web UI
+
+Open `http://<your-truenas-ip>:<dashboard-port>` (default `7842`).
+You'll be redirected to a setup form where you enter:
 
 | Field | Where to get it |
 |-------|----------------|
@@ -39,13 +46,16 @@ Docker volumes are auto-created on install and persist across upgrades.
 | GitHub Repo | `your-org/your-android-repo` |
 | Telegram Bot Token | Message @BotFather → /newbot |
 | Your Telegram Chat ID | Message @userinfobot |
-| Anthropic API Key | console.anthropic.com → API Keys |
+| Anthropic Auth Mode | Subscription (recommended) or API Key |
+| Anthropic API Key | console.anthropic.com → API Keys (only if API Key mode) |
 
-5. Click **Install** — done. TrueNAS auto-provisions all data volumes.
+Click **Save & Start Agents**. The dashboard writes the config to a
+shared volume and restarts the worker containers, which pick up the
+new values within seconds.
 
 ---
 
-### Step 3 — Prepare your Android repo
+### Step 4 — Prepare your Android repo
 
 Add these two files to your Android repo and push:
 
@@ -67,7 +77,7 @@ Copy from: `config/agent-task-template.md` in the android-agent package.
 
 ---
 
-### Step 4 — Trigger your first build
+### Step 5 — Trigger your first build
 
 Create a GitHub issue in your repo with the label `claude`.
 Within 5 minutes, check your Telegram — the coordinator will notify you as work begins.
