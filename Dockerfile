@@ -68,7 +68,6 @@ WORKDIR /agent
 COPY scripts/ ./scripts/
 COPY web/     ./web/
 COPY bot/     ./bot/
-COPY cron/    ./cron/
 COPY config/  ./config/
 RUN chmod +x ./scripts/*.sh ./scripts/roles/*.sh
 
