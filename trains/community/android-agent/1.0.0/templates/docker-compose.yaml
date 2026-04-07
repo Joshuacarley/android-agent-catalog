@@ -30,9 +30,9 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - bus:/agent/bus:ro
-      - workspaces:/agent/workspaces:ro
-      - logs:/agent/logs:ro
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
       - agent-config:/agent/config
       - /var/run/docker.sock:/var/run/docker.sock
 
