@@ -100,12 +100,22 @@ setup_claude_auth() {
 
 # ── GitHub CLI authentication ─────────────────────────────────
 setup_github_auth() {
-  if [ -n "$GITHUB_TOKEN" ]; then
-    echo "$GITHUB_TOKEN" | gh auth login --with-token 2>/dev/null
-    echo "✅ GitHub: authenticated"
-  else
+  if [ -z "$GITHUB_TOKEN" ]; then
     echo "❌ GITHUB_TOKEN not set (shouldn't happen after wait_for_config)"
     exit 1
+  fi
+
+  # Ensure gh has a writable config dir
+  export GH_CONFIG_DIR="${GH_CONFIG_DIR:-/root/.config/gh}"
+  mkdir -p "$GH_CONFIG_DIR"
+
+  # Don't let gh failure kill the whole container — surface the error
+  # and fall back to the GH_TOKEN env var (which gh honors directly).
+  if echo "$GITHUB_TOKEN" | gh auth login --with-token; then
+    echo "✅ GitHub: authenticated via gh auth login"
+  else
+    echo "⚠️  gh auth login failed — falling back to GH_TOKEN env var"
+    export GH_TOKEN="$GITHUB_TOKEN"
   fi
 }
 
