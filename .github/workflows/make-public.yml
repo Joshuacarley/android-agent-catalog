@@ -1,0 +1,39 @@
+name: Make Package Public
+
+# This runs once after the first successful image push
+# to make the GHCR package publicly pullable (no auth needed for TrueNAS)
+
+on:
+  workflow_run:
+    workflows: ["Build & Push Docker Image"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  make-public:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Make package public
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Set the package visibility to public so TrueNAS can pull without auth
+            try {
+              await github.rest.packages.setPackageVisibilityForAuthenticatedUser({
+                package_type: 'container',
+                package_name: 'android-agent',
+                visibility: 'public'
+              });
+              console.log('Package is now public');
+            } catch (e) {
+              // May already be public or need org-level setting
+              console.log('Note:', e.message);
+              console.log('If this fails, go to:');
+              console.log('github.com/YOUR_USERNAME?tab=packages');
+              console.log('→ android-agent → Package settings → Change visibility → Public');
+            }

@@ -1,0 +1,61 @@
+# CLAUDE.md
+# Place this file in the root of your Android repo.
+# All agents read this before doing any work.
+
+## Project Overview
+[Describe your app in 2-3 sentences]
+
+## Build Commands
+```bash
+# Debug build
+./gradlew assembleDebug
+
+# Run unit tests
+./gradlew test
+
+# Run instrumented tests (requires emulator)
+./gradlew connectedAndroidTest
+
+# Lint
+./gradlew lint
+```
+
+## Tech Stack
+- Language: Kotlin
+- UI: Jetpack Compose
+- Architecture: MVVM + Clean Architecture
+- DI: Hilt
+- Async: Coroutines + Flow
+- Navigation: Compose Navigation
+- Min SDK: 26
+- Target SDK: 34
+
+## Project Structure
+```
+app/
+  src/
+    main/
+      java/com/yourpackage/
+        data/          ← Repository layer, data sources
+        domain/        ← Use cases, models
+        ui/            ← ViewModels, Compose screens
+          screens/     ← One folder per screen
+          components/  ← Shared composables
+        di/            ← Hilt modules
+```
+
+## Code Conventions
+- ViewModels live in ui/screens/<FeatureName>/
+- Never put business logic in Composables
+- Use StateFlow for UI state, not LiveData
+- All network calls go through repository layer
+- Error handling: use sealed Result<T> classes
+- String resources in res/values/strings.xml (never hardcode)
+
+## Agent-Specific Rules
+- NEVER modify build.gradle.kts without running a build to verify
+- NEVER change minSdk or targetSdk
+- NEVER add dependencies without checking for conflicts first
+- Always run ./gradlew assembleDebug before marking a task done
+- Always write/update unit tests for any logic you change
+- Commit message format: "Fix #<issue>: <short description>"
