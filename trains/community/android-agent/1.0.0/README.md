@@ -12,16 +12,18 @@ directly to Telegram.
 
 - TrueNAS SCALE 24.10 (Electric Eel) or newer
 - A host with KVM support (`/dev/kvm` must exist on the TrueNAS host)
-- A dataset on your pool for agent data (e.g. `/mnt/tank/agent-data`)
 - A GitHub personal access token with `repo`, `issues`, and `pull_requests` scopes
 - A Telegram bot token and chat ID
 - Either a Claude Pro/Max subscription (recommended) or an Anthropic API key
 
 ## Install
 
-1. Create the data dataset on your pool before installing.
-2. Fill out the install wizard with your GitHub, Telegram, Anthropic
-   credentials and storage path.
+Storage is fully managed by TrueNAS via Docker named volumes — no
+pre-install script, no manual datasets.
+
+1. Fill out the install wizard with your GitHub, Telegram, and
+   Anthropic credentials.
+2. Click Install. TrueNAS auto-creates the persistent volumes.
 3. Once installed, open the dashboard at `http://<your-nas>:<dashboard-port>`.
 
 See the project repository for more details:

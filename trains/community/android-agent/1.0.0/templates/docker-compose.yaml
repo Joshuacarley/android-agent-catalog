@@ -2,9 +2,12 @@
   Android Agent Team — TrueNAS Catalog App
   Jinja2 template rendered by TrueNAS SCALE (Electric Eel+).
   Values come from ix_values.yaml merged with user answers to questions.yaml.
+
+  Storage is TrueNAS-managed via Docker named volumes — no host paths, no
+  pre-install script. Volumes are auto-created on first install, persist
+  across upgrades, and are listed under the app's Volumes tab in the UI.
 #}
 {%- set image = images.image.repository ~ ":" ~ images.image.tag -%}
-{%- set data_path = values.storage.data_path -%}
 {%- set dev_count = values.agent.developer_count -%}
 version: "3.9"
 
@@ -30,11 +33,11 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD", "pgrep", "-f", "bot.py"]
@@ -63,9 +66,9 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus:ro"
-      - "{{ data_path }}/workspaces:/agent/workspaces:ro"
-      - "{{ data_path }}/logs:/agent/logs:ro"
+      - bus:/agent/bus:ro
+      - workspaces:/agent/workspaces:ro
+      - logs:/agent/logs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   # ── Coordinator (polls GitHub, dispatches tasks) ──────────
@@ -88,13 +91,13 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
 
   # ── Architect ─────────────────────────────────────────────
   architect:
@@ -116,13 +119,13 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
 
   # ── Developer 1 ───────────────────────────────────────────
   developer-1:
@@ -144,13 +147,13 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
 {% if dev_count >= 2 %}
   # ── Developer 2 ───────────────────────────────────────────
   developer-2:
@@ -172,13 +175,13 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
 {% endif %}
 {% if dev_count >= 3 %}
   # ── Developer 3 ───────────────────────────────────────────
@@ -201,13 +204,13 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
 {% endif %}
 {% if dev_count >= 4 %}
   # ── Developer 4 ───────────────────────────────────────────
@@ -230,13 +233,13 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
 {% endif %}
   # ── QA (emulator, screen recording) ──────────────────────
   qa:
@@ -260,13 +263,13 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
 
   # ── DevOps (final build, Telegram delivery, GitHub PR) ────
   devops:
@@ -288,10 +291,19 @@ services:
     devices:
       - /dev/kvm:/dev/kvm
     volumes:
-      - "{{ data_path }}/bus:/agent/bus"
-      - "{{ data_path }}/workspaces:/agent/workspaces"
-      - "{{ data_path }}/logs:/agent/logs"
-      - "{{ data_path }}/builds:/builds"
-      - "{{ data_path }}/android-home:/root/.android"
-      - "{{ data_path }}/claude-credentials:/root/.claude"
-      - "{{ data_path }}/agent-config:/agent/config"
+      - bus:/agent/bus
+      - workspaces:/agent/workspaces
+      - logs:/agent/logs
+      - builds:/builds
+      - android-home:/root/.android
+      - claude-credentials:/root/.claude
+      - agent-config:/agent/config
+
+volumes:
+  bus:
+  workspaces:
+  logs:
+  builds:
+  android-home:
+  claude-credentials:
+  agent-config:

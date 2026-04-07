@@ -9,8 +9,6 @@ groups:
     description: "Control how the agent team operates"
   - name: "Network Configuration"
     description: "Configure the status dashboard port"
-  - name: "Storage"
-    description: "Where to store builds, logs, and workspaces"
 
 portals:
   web_portal:
@@ -175,20 +173,3 @@ questions:
             min: 1024
             max: 65535
 
-  # ── Storage ────────────────────────────────────────────────
-  - variable: storage
-    label: "Storage"
-    group: "Storage"
-    schema:
-      type: dict
-      attrs:
-        - variable: data_path
-          label: "Data Storage Path"
-          description: >-
-            Path on your TrueNAS pool to store builds, logs, and workspaces.
-            This dataset must exist before installing.
-            Example: /mnt/tank/agent-data
-          schema:
-            type: hostpath
-            required: true
-            default: "/mnt/tank/agent-data"

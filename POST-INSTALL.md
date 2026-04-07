@@ -47,7 +47,7 @@ All checks should pass. Common failures:
 | `GitHub authenticated` | Check GITHUB_TOKEN in app config |
 | `KVM device accessible` | Enable Virtualization in TrueNAS + BIOS |
 | `AVD (Pixel_6_API_34)` | First boot takes ~10 min to create the AVD |
-| `Builds directory writable` | Check DATA_PATH permissions |
+| `Builds directory writable` | Should not happen — Docker-managed volume. Try reinstalling the app. |
 
 ---
 
@@ -69,9 +69,8 @@ Please visit: https://claude.ai/oauth/authorize?...
 Open that URL on your Mac/phone, log in with your claude.ai account,
 and approve access. The terminal will confirm authentication.
 
-**That's it.** The credentials are saved to the shared volume at
-`/mnt/tank/agent-data/claude-credentials` — all 7 agent containers
-read from this automatically. You won't need to do this again unless
+**That's it.** The credentials are saved to the shared Docker volume
+`claude-credentials` — all 7 agent containers read from this automatically. You won't need to do this again unless
 you log out or the token expires (typically 90 days).
 
 Verify auth worked:
@@ -251,10 +250,10 @@ Containers may have crashed mid-task. Unlock via Telegram:
 /cancel 42
 ```
 
-Or manually:
+Or manually from inside a container (the `bus` volume is shared by all agents):
 ```bash
-mv /mnt/tank/agent-data/bus/in-progress/issue-42-*.json \
-   /mnt/tank/agent-data/bus/queue/
+docker exec agent-coordinator bash -c \
+  'mv /agent/bus/in-progress/issue-42-*.json /agent/bus/queue/'
 ```
 
 ### Updating the app

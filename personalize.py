@@ -16,11 +16,12 @@ import sys
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 FILES_TO_PATCH = [
-    "catalog.json",
-    "pre-install.sh",
     "README.md",
-    "trains/community/android-agent/app.yaml",
-    "trains/community/android-agent/docker-compose.yaml",
+    "trains/community/android-agent/item.yaml",
+    "trains/community/android-agent/app_versions.json",
+    "trains/community/android-agent/1.0.0/app.yaml",
+    "trains/community/android-agent/1.0.0/ix_values.yaml",
+    "trains/community/android-agent/1.0.0/templates/docker-compose.yaml",
 ]
 
 def replace_in_file(path, old, new):
@@ -45,16 +46,12 @@ def main():
         print("Username required.")
         sys.exit(1)
 
-    pool = input("TrueNAS pool name [tank]: ").strip() or "tank"
-
     print()
     print("Patching files...")
 
     for f in FILES_TO_PATCH:
         replace_in_file(f, "Joshuacarley", username)
-
-    # Also patch pool name in pre-install.sh
-    replace_in_file("pre-install.sh", 'POOL="${1:-tank}"', f'POOL="${{1:-{pool}}}"')
+        replace_in_file(f, "joshuacarley", username.lower())
 
     print()
     print("=" * 50)
@@ -71,13 +68,11 @@ def main():
     print(f"  4. GitHub Actions will build the Docker image (~20 min first time)")
     print(f"     Watch: https://github.com/{username}/android-agent-catalog/actions")
     print()
-    print(f"  5. On TrueNAS Shell, run:")
-    print(f"     curl -fsSL https://raw.githubusercontent.com/{username}/android-agent-catalog/main/pre-install.sh | bash")
-    print()
-    print(f"  6. In TrueNAS → Apps → Manage Catalogs → Add Catalog:")
+    print(f"  5. In TrueNAS → Apps → Manage Catalogs → Add Catalog:")
     print(f"     https://github.com/{username}/android-agent-catalog")
     print()
-    print(f"  7. Search 'Android Agent' → Install → fill in your tokens")
+    print(f"  6. Search 'Android Agent' → Install → fill in your tokens")
+    print(f"     (Storage is auto-provisioned, no pre-install needed.)")
     print()
 
 if __name__ == "__main__":

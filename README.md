@@ -9,19 +9,10 @@ Label a GitHub issue → agents write code → build APK → test on emulator �
 
 ## One-Touch Install
 
-### Step 1 — Run the pre-install script (30 seconds)
+Storage is TrueNAS-managed — no pre-install script, no manual datasets.
+Docker volumes are auto-created on install and persist across upgrades.
 
-In TrueNAS → **System → Shell**, paste:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Joshuacarley/android-agent-catalog/main/pre-install.sh | bash
-```
-
-This creates the required ZFS datasets. You only do this once.
-
----
-
-### Step 2 — Add this catalog to TrueNAS (one-time)
+### Step 1 — Add this catalog to TrueNAS (one-time)
 
 1. Go to **Apps → Discover Apps**
 2. Click **Manage Catalogs** (top right)
@@ -35,7 +26,7 @@ This creates the required ZFS datasets. You only do this once.
 
 ---
 
-### Step 3 — Install the app
+### Step 2 — Install the app
 
 1. Go to **Apps → Discover Apps**
 2. Search for **"Android Agent"**
@@ -49,13 +40,12 @@ This creates the required ZFS datasets. You only do this once.
 | Telegram Bot Token | Message @BotFather → /newbot |
 | Your Telegram Chat ID | Message @userinfobot |
 | Anthropic API Key | console.anthropic.com → API Keys |
-| Data Storage Path | `/mnt/tank/agent-data` (created in Step 1) |
 
-5. Click **Install** — done.
+5. Click **Install** — done. TrueNAS auto-provisions all data volumes.
 
 ---
 
-### Step 4 — Prepare your Android repo
+### Step 3 — Prepare your Android repo
 
 Add these two files to your Android repo and push:
 
@@ -77,7 +67,7 @@ Copy from: `config/agent-task-template.md` in the android-agent package.
 
 ---
 
-### Step 5 — Trigger your first build
+### Step 4 — Trigger your first build
 
 Create a GitHub issue in your repo with the label `claude`.
 Within 5 minutes, check your Telegram — the coordinator will notify you as work begins.
