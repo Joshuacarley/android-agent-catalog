@@ -133,7 +133,11 @@ def run_command(cmd, team_id=None):
         ws = f"{WS_ROOT}/{team_id}" if team_id and team_id != "default" else WS_ROOT
         workspaces = sorted(g2.glob(f"{ws}/issue-*"), reverse=True)
         cwd = workspaces[0] if workspaces else ("/agent" if os.path.isdir("/agent") else os.getcwd())
-        try: return subprocess.check_output(["claude","--print",prompt],text=True,timeout=120,cwd=cwd)
+        try:
+            r = subprocess.run(["claude","--print",prompt],capture_output=True,text=True,timeout=120,cwd=cwd)
+            if r.returncode != 0:
+                return f"claude exit {r.returncode}\nstderr:\n{r.stderr.strip()}\nstdout:\n{r.stdout.strip()}"
+            return r.stdout
         except subprocess.TimeoutExpired: return "Timed out after 120s"
         except Exception as e: return f"Error: {e}"
 
