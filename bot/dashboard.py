@@ -132,7 +132,7 @@ def run_command(cmd, team_id=None):
         import glob as g2
         ws = f"{WS_ROOT}/{team_id}" if team_id and team_id != "default" else WS_ROOT
         workspaces = sorted(g2.glob(f"{ws}/issue-*"), reverse=True)
-        cwd = workspaces[0] if workspaces else "/builds"
+        cwd = workspaces[0] if workspaces else ("/agent" if os.path.isdir("/agent") else os.getcwd())
         try: return subprocess.check_output(["claude","--print",prompt],text=True,timeout=120,cwd=cwd)
         except subprocess.TimeoutExpired: return "Timed out after 120s"
         except Exception as e: return f"Error: {e}"
