@@ -33,6 +33,7 @@ services:
       - bus:/agent/bus
       - workspaces:/agent/workspaces
       - logs:/agent/logs
+      - claude-credentials:/root/.claude
       - agent-config:/agent/config
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -50,6 +51,7 @@ services:
       - logs:/agent/logs
       - builds:/builds
       - android-home:/root/.android
+      - claude-credentials:/root/.claude
       - agent-config:/agent/config
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
